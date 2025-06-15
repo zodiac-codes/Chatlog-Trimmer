@@ -19,25 +19,51 @@ namespace RCRP_CLT
 
         private void btnTrim_Click(object sender, EventArgs e)
         {
-            // Replace underscores with spaces
             string rawNames = txtNames.Text.Replace("_", " ");
             string[] names = rawNames.Split(',');
             string[] lines = rbChatlog.Lines;
 
             List<string> filtered = new List<string>();
+            bool shouldIncludeNextLine = false;
+
             foreach (string line in lines)
             {
-                foreach (string name in names)
+                bool lineHasTimestamp = line.Length >= 10 && line[0] == '[' && line[9] == ']';
+
+                if (lineHasTimestamp)
                 {
-                    if (line.Contains(name.Trim()))
+                    // Check if name is in line
+                    bool matchedName = false;
+                    foreach (string name in names)
+                    {
+                        if (line.Contains(name.Trim()))
+                        {
+                            matchedName = true;
+                            break;
+                        }
+                    }
+
+                    if (matchedName)
                     {
                         string processedLine = cbTimestamp.Checked && line.Length > 11
                             ? line.Substring(11)
                             : line;
 
                         filtered.Add(processedLine);
-                        break;
+                        shouldIncludeNextLine = true;
+                        continue;
                     }
+                }
+
+                // Checks if cut-off line is wrapped cause of a named player.
+                if (shouldIncludeNextLine)
+                {
+                    string processedLine = cbTimestamp.Checked && line.Length > 11
+                        ? line.Substring(11)
+                        : line;
+
+                    filtered.Add(processedLine);
+                    shouldIncludeNextLine = false; // Includes only 1 wrapped line.
                 }
             }
 
